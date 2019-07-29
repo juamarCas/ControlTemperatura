@@ -203,7 +203,9 @@ ISR(TIMER0_COMPA_vect){
   if(counter >= 120){
     t = dht.readTemperature();
     h = dht.readHumidity();
-    UpdateText();
+    if(isInConfiguration){
+       UpdateText();
+    }
     counter = 0;
   }
 }
