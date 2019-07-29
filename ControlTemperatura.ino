@@ -27,7 +27,7 @@
 //encoder
 #define outputA 10
 #define outputB 11
-int counter = 0;
+
 
 int aState;
 int aLastState;
@@ -40,7 +40,7 @@ float tMin = 29; // temperatura mínima
 float tMax = 32; // temperatura máxima
 float hMin = 50; // humedad mínima
 float hMax = 60; // humedad máxima
-
+int counter = 0; // contador para el timer
 
 
 //control de estados
@@ -57,6 +57,11 @@ void setup() {
   EIMSK = (1 << INT0); //activo la interrupción del PD2
   EICRA = (1 << ISC00); // flanco de subida
 
+  TCCR0A = (1 << WGM01);
+  OCR0A = 195; // 0.01248 Secs
+  TCCR0B = (1 << CS02) | (1 << CS00);
+  TIMSK0 = (1 << OCIE0A); // habilito interrupción
+
   lcdStart();
   UpdateText();
 
@@ -69,8 +74,6 @@ void setup() {
 
 void loop() {
   aState = digitalRead(outputA);
-  t = dht.readTemperature();
-  h = dht.readHumidity();
 
   if (t <= tMin) {
     PORTD |= (1 << tempControl);
@@ -92,8 +95,9 @@ void loop() {
   
   if(isInConfiguration){
     Encoder();
+    UpdateText();
   } 
-  UpdateText();
+ 
 
 }
 
@@ -191,6 +195,16 @@ ISR(INT0_vect) {
   state += 1;
   if (state >= 5) {
     state = 0;
+  }
+}
+
+ISR(TIMER0_COMPA_vect){
+  counter++;
+  if(counter >= 120){
+    t = dht.readTemperature();
+    h = dht.readHumidity();
+    UpdateText();
+    counter = 0;
   }
 }
 
