@@ -25,7 +25,6 @@
 
 
 //encoder
-
 #define outputA 10
 #define outputB 11
 int counter = 0;
@@ -39,6 +38,8 @@ float t;
 float h; //humedad
 float tMin = 29; // temperatura mínima
 float tMax = 32; // temperatura máxima
+float hMin = 50; // humedad mínima
+float hMax = 60; // humedad máxima
 
 
 
@@ -55,7 +56,7 @@ void setup() {
 
   EIMSK = (1 << INT0); //activo la interrupción del PD2
   EICRA = (1 << ISC00); // flanco de subida
-  
+
   lcdStart();
   UpdateText();
 
@@ -67,40 +68,130 @@ void setup() {
 }
 
 void loop() {
-
+  aState = digitalRead(outputA);
   t = dht.readTemperature();
   h = dht.readHumidity();
 
   if (t <= tMin) {
-    digitalWrite(controlPin, HIGH);
+    PORTD |= (1 << tempControl);
   } else if (t > tMax) {
-    digitalWrite(controlPin, LOW);
+    PORTD &= ~(1 << tempControl);
   }
 
+  if (h <= hMin) {
+    PORTD |= (1 << humControl);
+  } else if (t > hMax) {
+    PORTD &= ~(1 << humControl);
+  }
+
+  if (state > 0) {
+    isInConfiguration = true;
+  } else if (state <= 0) {
+    isInConfiguration = false;
+  }
+  
+  if(isInConfiguration){
+    Encoder();
+  } 
+  UpdateText();
+
+}
+
+void Encoder(){
+  if (aState != aLastState){         
+     if (digitalRead(outputB) != aState) { 
+       if(state == 1){
+          tMax++;
+       }else if(state == 2){
+          tMin++;
+       }else if(state == 3){
+          hMax++;
+       }else if(state == 4){
+          hMin++;
+       }
+     } else {
+       if(state == 1){
+          tMax--;
+       }else if(state == 2){
+          tMin--;
+       }else if(state == 3){
+          hMax--;
+       }else if(state == 4){
+          hMin--;
+       }
+     }   
+   } 
+   aLastState = aState; // Updates the previous state of the outputA with the current state
 }
 
 
 
-
 void UpdateText() {
+  clearLcd();
   if (isInConfiguration == false) {
+
     setLcdCursor(0, 0); // temperatura real
     lcdString("t=");
     lcdNumber(t);
     writeCommand(DATA, 0xDF);
 
-    setLcdCursor(0, 0); // temperatura real
+    setLcdCursor(1, 0); // temperatura real
     lcdString("h=");
-    lcdNumber(t);
+    lcdNumber(h);
     lcdString("%");
-  }else{
-    
+  } else {
+
+    if (state == 1) {
+        TempControlConfText();
+    } else if (state == 2) {
+        TempControlConfText();
+    } else if (state == 3) {
+        HumControlConfText();
+    } else if (state == 4) {
+        HumControlConfText();
+    }
   }
 }
 
+void TempControlConfText() {
+  // Lo que mostrará el display cuando se configure temperatura
+  setLcdCursor(0, 0); 
+  lcdString("tMax=");
+  lcdNumber(tMax);
+  writeCommand(DATA, 0xDF);
 
-ISR(INT0_vect){
-  
+  setLcdCursor(1, 0); 
+  lcdString("tMin=");
+  lcdNumber(tMin);
+  writeCommand(DATA, 0xDF);
+
+}
+
+void HumControlConfText() {
+  // Lo que mostrará el display cuando se configure humedad
+  lcdString("hMax=");
+  lcdNumber(hMax);
+  lcdString("%");
+
+  setLcdCursor(1, 0); 
+  lcdString("hMin=");
+  lcdNumber(hMin);
+  lcdString("%");
+
+}
+
+/*
+  state -> 1 Configura temp max
+  state -> 2 Configura temp min
+  state -> 3 Configura hum max
+  state -> 4 Configura hum min
+*/
+ISR(INT0_vect) {
+  //cambio de estados
+  state += 1;
+  if (state >= 5) {
+    state = 0;
+  }
 }
 
 
