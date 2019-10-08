@@ -8,10 +8,10 @@
 #define DHTPIN 7
 #define DHTTYPE DHT22
 int t, h;
-int menuState = 0;
-int maxTemp = 32, minTemp = 29;
-int maxHum, minHum;
-int counter = 0;
+unsigned int menuState = 0;
+unsigned int maxTemp = 32, minTemp = 29;
+unsigned int maxHum, minHum;
+unsigned int counter = 0;
 const int interval = 2000;
 int lastTime = 0;
 int batteryLevel;
