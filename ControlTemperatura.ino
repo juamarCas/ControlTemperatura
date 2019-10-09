@@ -2,9 +2,9 @@
 #include "DHT.h"
 #include <Adafruit_Sensor.h>
 #include <avr/io.h>
-#define tempControl PD0
-#define humControl PD1
-#define batteryControl PB4
+#define tempControl PB4
+#define humControl PB5
+#define batteryControl PD4
 #define DHTPIN 7
 #define DHTTYPE DHT22
 int t, h;
@@ -23,10 +23,10 @@ LiquidCrystal lcd(5, 6, 8, 9, 10, 11);
   batteryControl lo que encenderá o apagará el led indicando baja batería
 */
 void setup() {
-  DDRD = (1 << tempControl) | (1 << humControl);
-  DDRB = (1 << batteryControl);
-  PORTB &= ~(1 << batteryControl);
-  PORTD = (1 << PD0) | (1 << tempControl);//activo la resistencia pullUp en el pin 0
+  DDRD = (1 << batteryControl);
+  DDRB = (1 << tempControl) | (1 << humControl);
+  PORTD &= ~(1 << batteryControl);
+  PORTD = (1 << PD0);//activo la resistencia pullUp en el pin 0
   dht.begin();
   Serial.begin(9600);
   lcd.begin(16, 2);
@@ -44,6 +44,7 @@ void loop() {
     isInConfiguration = false;
   }
   if ((PIND = (1 << PD0)) == 0) {
+    lcd.Clear();
     menuState += 1;
     isInConfiguration = true;  
     if (menuState > 4) {
@@ -56,15 +57,15 @@ void loop() {
 
   //Código que maneja el control de variables en el horno
   if (t >= maxTemp) {
-    PORTD &= ~(1 << tempControl);
+    PORTB &= ~(1 << tempControl);
   } else if (t < minTemp) {
-    PORTD |= (1 << tempControl);
+    PORTB |= (1 << tempControl);
   }
 
   if (h >= maxHum) { 
-    PORTD |= (1 << humControl);
+    PORTB |= (1 << humControl);
   } else if (t < minHum) {
-    PORTD &= ~(1 << humControl);
+    PORTB &= ~(1 << humControl);
   }
 
   if (batteryLevel < minBatteryLevel) {
@@ -76,6 +77,7 @@ void loop() {
 
   unsigned long now = millis();
   if (now - lastTime >= interval) {
+    lcd.Clear();
     lastTime = now;
     t = dht.readTemperature();
     h = dht.readHumidity();
