@@ -18,7 +18,10 @@ int batteryLevel;
 const int minBatteryLevel;
 bool isInConfiguration = false;
 DHT dht(DHTPIN, DHTTYPE);
-LiquidCrystal lcd(5, 6, 8, 9, 10, 11);
+/*
+ LiquidCrystal(rs, enable, d4, d5, d6, d7)
+*/
+LiquidCrystal lcd(4, 5, 8, 13, 6, 11);
 /*
   batteryControl lo que encenderá o apagará el led indicando baja batería
 */
