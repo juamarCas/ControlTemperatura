@@ -3,7 +3,7 @@
 #include <Adafruit_Sensor.h>
 #include <avr/io.h>
 #define tempControl PB4
-#define humControl PB5
+#define humControl PB1
 #define batteryControl PD4
 #define DHTPIN 7
 #define DHTTYPE DHT22
@@ -15,21 +15,17 @@ unsigned int counter = 0;
 const int interval = 2000;
 int lastTime = 0;
 int batteryLevel;
-const int minBatteryLevel;
+ int minBatteryLevel;
 bool isInConfiguration = false;
 DHT dht(DHTPIN, DHTTYPE);
-/*
- LiquidCrystal(rs, enable, d4, d5, d6, d7)
-*/
 LiquidCrystal lcd(4, 5, 8, 13, 6, 11);
 /*
   batteryControl lo que encenderá o apagará el led indicando baja batería
 */
 void setup() {
-  DDRD = (1 << batteryControl);
   DDRB = (1 << tempControl) | (1 << humControl);
-  PORTD &= ~(1 << batteryControl);
-  PORTD = (1 << PD0);//activo la resistencia pullUp en el pin 0
+  DDRD = (1 << batteryControl);
+ 
   dht.begin();
   Serial.begin(9600);
   lcd.begin(16, 2);
@@ -46,15 +42,16 @@ void loop() {
   if (menuState == 0) {
     isInConfiguration = false;
   }
-  if ((PIND = (1 << PD0)) == 0) {
-    lcd.Clear();
+  if ((PIND &= (1 << PD0)) == 0) {
+    
+    lcd.clear();
     menuState += 1;
     isInConfiguration = true;  
     if (menuState > 4) {
       menuState = 0;
       isInConfiguration = false;
     }
-     _delay_ms(200);
+     _delay_ms(300);
   }
   // fin de control de menú
 
@@ -72,15 +69,14 @@ void loop() {
   }
 
   if (batteryLevel < minBatteryLevel) {
-    PORTB |= (1 << batteryControl);
+    PORTD |= (1 << batteryControl);
   } else {
-    PORTB &= ~(1 << batteryControl);
+    PORTD &= ~(1 << batteryControl);
   }
   //Fin de código de control de variables en el horno
 
   unsigned long now = millis();
   if (now - lastTime >= interval) {
-    lcd.Clear();
     lastTime = now;
     t = dht.readTemperature();
     h = dht.readHumidity();
@@ -97,6 +93,7 @@ void loop() {
 }
 
 void PrincipalMenuText() {
+ // lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("temp=");
   lcd.print(t);
@@ -110,6 +107,7 @@ void PrincipalMenuText() {
 }
 
 void ConfigurationMenuText() {
+  
   if (menuState == 1) {
     lcd.setCursor(0, 0);
     lcd.print("MaxTemp= ");
