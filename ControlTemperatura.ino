@@ -2,46 +2,55 @@
 #include "DHT.h"
 #include <Adafruit_Sensor.h>
 #include <avr/io.h>
-#define tempControl PB4
+#define tempControl 4
 #define humControl PB1
 #define batteryControl PD4
 #define DHTPIN 7
 #define DHTTYPE DHT22
+
 int t, h;
 unsigned int menuState = 0;
 unsigned int maxTemp = 32, minTemp = 29;
-unsigned int maxHum, minHum;
+unsigned int maxHum = 40, minHum = 30;
 unsigned int counter = 0;
 const int interval = 2000;
 int lastTime = 0;
 int batteryLevel;
- int minBatteryLevel;
+int minBatteryLevel;
 bool isInConfiguration = false;
 DHT dht(DHTPIN, DHTTYPE);
-LiquidCrystal lcd(4, 5, 8, 13, 6, 11);
+double dutyCycle = 20; 
+LiquidCrystal lcd(4, 5, 11, 6, 13, 8);
 /*
   batteryControl lo que encenderá o apagará el led indicando baja batería
 */
 void setup() {
-  DDRB = (1 << tempControl) | (1 << humControl);
+  DDRB = (1 << tempControl);
   DDRD = (1 << batteryControl);
- 
+  //PORTD |= (1 << PD0); //resistencia pull up
+  pinMode(9, OUTPUT); 
   dht.begin();
   Serial.begin(9600);
   lcd.begin(16, 2);
 
   EIMSK = (1 << INT0) | (1 << INT1);//activo la interrupción del PD2 y PD3
   EICRA = (1 << ISC01) | (1 << ISC11);//flanco de bajada
+/*
+  startPWM
+  conft1b
+  sMask*/
+  //OCR1A = (dutyCycle/100)*255;
   sei();
 }
 /*
   set cursor (col, row)
 */
 void loop() {
+   
   // control de los estados de menú
   if (menuState == 0) {
     isInConfiguration = false;
-  }
+  }/*
   if ((PIND &= (1 << PD0)) == 0) {
     
     lcd.clear();
@@ -52,7 +61,7 @@ void loop() {
       isInConfiguration = false;
     }
      _delay_ms(300);
-  }
+  }*/
   // fin de control de menú
 
   //Código que maneja el control de variables en el horno
@@ -63,9 +72,9 @@ void loop() {
   }
 
   if (h >= maxHum) { 
-    PORTB |= (1 << humControl);
+    analogWrite(9, 100); 
   } else if (t < minHum) {
-    PORTB &= ~(1 << humControl);
+    analogWrite(9, 0); 
   }
 
   if (batteryLevel < minBatteryLevel) {
