@@ -10,8 +10,8 @@
 
 int t, h;
 unsigned int menuState = 0;
-unsigned int maxTemp = 32, minTemp = 29;
-unsigned int maxHum = 40, minHum = 30;
+unsigned int maxTemp = 30, minTemp = 28;
+unsigned int maxHum = 47;
 unsigned int counter = 0;
 const int interval = 2000;
 int lastTime = 0;
@@ -73,7 +73,7 @@ void loop() {
 
   if (h >= maxHum) { 
     analogWrite(9, 100); 
-  } else if (t < minHum) {
+  } else {
     analogWrite(9, 0); 
   }
 
